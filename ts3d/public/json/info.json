@@ -1,0 +1,308 @@
+{
+	"models": [
+		{
+			"path": "gongsuanbeng",
+			"modelInfo": {
+				"name": "供酸泵",
+				"uuid": "4882364c-c4d2-49e9-2160-77e34c205b57",
+				"posx": 10,
+				"posy": 0,
+				"posz": 15,
+				"rotx": 0,
+				"roty": 0,
+				"rotz": 0,
+				"length": 1,
+				"width": 1,
+				"height": 1,
+				"alternate": false,
+				"outline": false,
+				"collision": false,
+				"color": ""
+			},
+			"displayInfo": {
+				"temperature": "88度",
+				"dampness": "50%",
+				"pressure": "50pa"
+			},
+			"userInfo": {
+				"userID": "",
+				"data": ""
+			},
+			"children": []
+		},
+		{
+			"path": "gongyeguan",
+			"modelInfo": {
+				"name": "供液管",
+				"uuid": "5fafefb3-5240-b3b9-7584-66a1a8066c96",
+				"posx": 10,
+				"posy": 0,
+				"posz": 20,
+				"rotx": 0,
+				"roty": 0,
+				"rotz": 0,
+				"length": 1,
+				"width": 1,
+				"height": 1,
+				"alternate": false,
+				"outline": false,
+				"collision": false,
+				"color": ""
+			},
+			"displayInfo": {
+				"temperature": "88度",
+				"dampness": "50%",
+				"pressure": "50pa"
+			},
+			"userInfo": {
+				"userID": "",
+				"data": ""
+			},
+			"children": [
+				{
+					"path": "fangpenguan",
+					"modelInfo": {
+						"name": "防喷管",
+						"uuid": "694ce94e-9710-74f5-e657-f2a6a9d9ddd0",
+						"posx": 10,
+						"posy": 0,
+						"posz": 0,
+						"rotx": 0,
+						"roty": 0,
+						"rotz": 0,
+						"length": 1,
+						"width": 1,
+						"height": 1,
+						"alternate": false,
+						"outline": false,
+						"collision": false,
+						"color": ""
+					},
+					"displayInfo": {
+						"temperature": "88度",
+						"dampness": "50%",
+						"pressure": "50pa"
+					},
+					"userInfo": {
+						"userID": "",
+						"data": ""
+					},
+					"children": []
+				},
+				{
+					"path": "fangpenguan",
+					"modelInfo": {
+						"name": "防喷管",
+						"uuid": "63d6bff8-b739-7c69-3076-3bc7f15f17a4",
+						"posx": -5,
+						"posy": 0,
+						"posz": 0,
+						"rotx": 0,
+						"roty": 0,
+						"rotz": 0,
+						"length": 1,
+						"width": 1,
+						"height": 1,
+						"alternate": false,
+						"outline": false,
+						"collision": false,
+						"color": ""
+					},
+					"displayInfo": {
+						"temperature": "88度",
+						"dampness": "50%",
+						"pressure": "50pa"
+					},
+					"userInfo": {
+						"userID": "",
+						"data": ""
+					},
+					"children": []
+				},
+				{
+					"path": "fangpenguan",
+					"modelInfo": {
+						"name": "防喷管",
+						"uuid": "ac46269c-a7ce-50dd-9b41-a46b71e1915a",
+						"posx": 25,
+						"posy": 0,
+						"posz": 0,
+						"rotx": 0,
+						"roty": 0,
+						"rotz": 0,
+						"length": 1,
+						"width": 1,
+						"height": 1,
+						"alternate": false,
+						"outline": false,
+						"collision": false,
+						"color": ""
+					},
+					"displayInfo": {
+						"temperature": "88度",
+						"dampness": "50%",
+						"pressure": "50pa"
+					},
+					"userInfo": {
+						"userID": "",
+						"data": ""
+					},
+					"children": []
+				}
+			]
+		},
+		{
+			"path": "gongyeguan",
+			"modelInfo": {
+				"name": "供液管",
+				"uuid": "b8737277-ce06-f99c-dec9-5c5ce6a06ea1",
+				"posx": 10,
+				"posy": 0,
+				"posz": 25,
+				"rotx": 0,
+				"roty": 0,
+				"rotz": 0,
+				"length": 1,
+				"width": 1,
+				"height": 1,
+				"alternate": false,
+				"outline": false,
+				"collision": false,
+				"color": ""
+			},
+			"displayInfo": {
+				"temperature": "88度",
+				"dampness": "50%",
+				"pressure": "50pa"
+			},
+			"userInfo": {
+				"userID": "",
+				"data": ""
+			},
+			"children": [
+				{
+					"path": "jianceche",
+					"modelInfo": {
+						"name": "监测车",
+						"uuid": "79fb4766-9716-0ea5-41a0-76030cb51e92",
+						"posx": 0,
+						"posy": 0,
+						"posz": 30,
+						"rotx": 0,
+						"roty": 0,
+						"rotz": 0,
+						"length": 1,
+						"width": 1,
+						"height": 1,
+						"alternate": false,
+						"outline": false,
+						"collision": false,
+						"color": ""
+					},
+					"displayInfo": {
+						"temperature": "88度",
+						"dampness": "50%",
+						"pressure": "50pa"
+					},
+					"userInfo": {
+						"userID": "",
+						"data": ""
+					},
+					"children": []
+				},
+				{
+					"path": "jianceche",
+					"modelInfo": {
+						"name": "监测车",
+						"uuid": "cffcd5a1-85df-0145-8729-999abbdd0867",
+						"posx": 0,
+						"posy": 0,
+						"posz": 25,
+						"rotx": 0,
+						"roty": 0,
+						"rotz": 0,
+						"length": 1,
+						"width": 1,
+						"height": 1,
+						"alternate": false,
+						"outline": false,
+						"collision": false,
+						"color": ""
+					},
+					"displayInfo": {
+						"temperature": "88度",
+						"dampness": "50%",
+						"pressure": "50pa"
+					},
+					"userInfo": {
+						"userID": "",
+						"data": ""
+					},
+					"children": [
+						{
+							"path": "jianceche",
+							"modelInfo": {
+								"name": "监测车",
+								"uuid": "b35757f0-55ff-96f7-5f70-313e4561d84c",
+								"posx": 0,
+								"posy": 0,
+								"posz": 15,
+								"rotx": 0,
+								"roty": 0,
+								"rotz": 0,
+								"length": 1,
+								"width": 1,
+								"height": 1,
+								"alternate": false,
+								"outline": false,
+								"collision": false,
+								"color": ""
+							},
+							"displayInfo": {
+								"temperature": "88度",
+								"dampness": "50%",
+								"pressure": "50pa"
+							},
+							"userInfo": {
+								"userID": "",
+								"data": ""
+							},
+							"children": [
+								{
+									"path": "jianceche",
+									"modelInfo": {
+										"name": "监测车",
+										"uuid": "67091506-9138-7437-f3b0-c772caeb2e20",
+										"posx": 0,
+										"posy": 0,
+										"posz": 20,
+										"rotx": 0,
+										"roty": 0,
+										"rotz": 0,
+										"length": 1,
+										"width": 1,
+										"height": 1,
+										"alternate": false,
+										"outline": false,
+										"collision": false,
+										"color": ""
+									},
+									"displayInfo": {
+										"temperature": "88度",
+										"dampness": "50%",
+										"pressure": "50pa"
+									},
+									"userInfo": {
+										"userID": "",
+										"data": ""
+									},
+									"children": []
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}

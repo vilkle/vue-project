@@ -1,0 +1,60 @@
+{
+	"path": [
+		{
+			"name": "防喷管",
+			"path": "fangpenguan"
+		},
+		{
+			"name": "供酸泵",
+			"path": "gongsuanbeng"
+		},
+		{
+			"name": "供液泵",
+			"path": "gongyebeng"
+		},
+		{
+			"name": "供液管",
+			"path": "gongyeguan"
+		},
+		{
+			"name": "混沙橇",
+			"path": "hunshaqiao"
+		},
+		{
+			"name": "监测车",
+			"path": "jianceche"
+		},
+		{
+			"name": "消防炮",
+			"path": "xiaofangpao"
+		},
+		{
+			"name": "防喷管",
+			"path": "fangpenguan"
+		},
+		{
+			"name": "供酸泵",
+			"path": "gongsuanbeng"
+		},
+		{
+			"name": "供液泵",
+			"path": "gongyebeng"
+		},
+		{
+			"name": "供液管",
+			"path": "gongyeguan"
+		},
+		{
+			"name": "混沙橇",
+			"path": "hunshaqiao"
+		},
+		{
+			"name": "监测车",
+			"path": "jianceche"
+		},
+		{
+			"name": "消防炮",
+			"path": "xiaofangpao"
+		}
+	]
+}

@@ -1,0 +1,175 @@
+{
+    "asset" : {
+        "generator" : "Khronos glTF Blender I/O v1.6.16",
+        "version" : "2.0"
+    },
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                0
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "fangpenyeguan",
+            "scale" : [
+                0.009999999776482582,
+                0.009999999776482582,
+                0.009999999776482582
+            ]
+        }
+    ],
+    "materials" : [
+        {
+            "alphaCutoff" : 0.5,
+            "alphaMode" : "MASK",
+            "doubleSided" : true,
+            "name" : "fangpenyeguan",
+            "normalTexture" : {
+                "index" : 0
+            },
+            "pbrMetallicRoughness" : {
+                "baseColorTexture" : {
+                    "index" : 1
+                },
+                "metallicRoughnessTexture" : {
+                    "index" : 2
+                }
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "\u7f51\u683c",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 0,
+                        "NORMAL" : 1,
+                        "TEXCOORD_0" : 2,
+                        "COLOR_0" : 3
+                    },
+                    "indices" : 4,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "sampler" : 0,
+            "source" : 0
+        },
+        {
+            "sampler" : 0,
+            "source" : 1
+        },
+        {
+            "sampler" : 0,
+            "source" : 2
+        }
+    ],
+    "images" : [
+        {
+            "mimeType" : "image/jpeg",
+            "name" : "fangpenyeguan_Normal",
+            "uri" : "textures/fangpenyeguan_Normal.jpg"
+        },
+        {
+            "mimeType" : "image/png",
+            "name" : "fangpenyeguan_BaseColorAO-fangpenyeguan_opacoty",
+            "uri" : "textures/fangpenyeguan_BaseColorAO-fangpenyeguan_opacoty.png"
+        },
+        {
+            "mimeType" : "image/jpeg",
+            "name" : "fangpenyeguan_Metallic-fangpenyeguan_Roughness",
+            "uri" : "textures/fangpenyeguan_Metallic-fangpenyeguan_Roughness.jpg"
+        }
+    ],
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5126,
+            "count" : 28112,
+            "max" : [
+                666.1087036132812,
+                381.32672119140625,
+                1057.697509765625
+            ],
+            "min" : [
+                -666.1087036132812,
+                -1.728424072265625,
+                -1057.6973876953125
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 28112,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 28112,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5123,
+            "count" : 28112,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5123,
+            "count" : 43404,
+            "type" : "SCALAR"
+        }
+    ],
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 337344,
+            "byteOffset" : 0
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 337344,
+            "byteOffset" : 337344
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 224896,
+            "byteOffset" : 674688
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 224896,
+            "byteOffset" : 899584
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 86808,
+            "byteOffset" : 1124480
+        }
+    ],
+    "samplers" : [
+        {
+            "magFilter" : 9729,
+            "minFilter" : 9987
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 1211288,
+            "uri" : "index.bin"
+        }
+    ]
+}
