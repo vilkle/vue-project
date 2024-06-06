@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import {onBeforeMount, onMounted, reactive, ref, toRaw, watch, type Ref} from 'vue';
+import {onBeforeMount, onMounted, reactive, ref, render, toRaw, watch, type Ref} from 'vue';
 import {useModelDataStore} from './store/modelData';
 import {useSelectModelStore} from './store/SelectModel';
 import {useHierarchyDataStore} from './store/hierarchyData';
@@ -20,6 +20,7 @@ import ModelCard from './components/ModelCard.vue';
 //import modelPath from './json/model.json';
 import axios from 'axios';
 import {vec2} from 'three/examples/jsm/nodes/Nodes.js';
+import {saveAs} from 'file-saver';
 
 let loading = ref(true);
 let infoArr: any[] = [];
@@ -28,6 +29,30 @@ let selectModelStore = useSelectModelStore();
 let hierarchyStore = useHierarchyDataStore();
 let modelCardStore = useModelCardStore();
 
+function inputHandle(file: any, fileList: any) {
+	loading.value = true;
+	// 创建一个FileReader对象
+	const reader = new FileReader();
+	reader.onload = (e: any) => {
+		// 在这里处理文件内容，例如保存到本地
+		const content = e.target.result;
+		let resBlob = new Blob([content]);
+		let reader: FileReader = new FileReader();
+		reader.readAsText(resBlob, 'utf-8');
+		reader.onload = async (e: any) => {
+			let res = JSON.parse(e.target.result);
+			console.log(JSON.parse(e.target.result));
+			await delay(5000);
+			loading.value = false;
+		};
+	};
+	reader.readAsArrayBuffer(file.raw);
+}
+function outputHandle() {
+	const data = JSON.stringify(infoArr);
+	const blob = new Blob([data], {type: 'application/json;charset=utf-8'});
+	saveAs(blob, '模型.json');
+}
 const cardDragStart = (event: any) => {
 	event.event.target.classList.add('dragging');
 };
@@ -43,6 +68,8 @@ const cardDrop = (e: any) => {
 	console.log('--------carddrop', e);
 };
 const handleClick01 = (node: Node) => {
+	console.log('---------node', node);
+
 	const id = node.id.toString();
 	getNameById(id, selectName);
 	selectModelStore.model.uuid = id;
@@ -228,6 +255,35 @@ function projectClick(node: any) {
 					</el-sub-menu>
 				</el-sub-menu>
 				<div class="flex-grow0" style="flex-grow: 1; background-color: rgb(29, 29, 29)" />
+
+				<el-upload
+					ref="upload"
+					action="#"
+					accept=".json"
+					:on-change="inputHandle"
+					:auto-upload="false"
+					style="background-color: rgb(29, 29, 29)"
+				>
+					<el-button
+						class="menubutton"
+						style="
+							margin-top: 5px;
+							color: white;
+							background: none;
+							background-color: rgb(29, 29, 29);
+							border-style: none;
+							outline: none;
+							cursor: pointer;
+							font-size: 14px;
+							font-family: '宋体' !important;
+						"
+						slot="trigger"
+						size="small"
+						type="primary"
+						>导入</el-button
+					>
+				</el-upload>
+				<div class="flex-grow0" style="width: 5px; background-color: rgb(29, 29, 29)" />
 				<button
 					class="menubutton"
 					style="
@@ -237,7 +293,10 @@ function projectClick(node: any) {
 						border-style: none;
 						outline: none;
 						cursor: pointer;
+						font-size: 14px;
+						font-family: '宋体' !important;
 					"
+					:onclick="outputHandle"
 				>
 					导出
 				</button>
