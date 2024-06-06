@@ -28,3 +28,6 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+.prettierignore
+.prettierrc.json
+eslint.config.js
