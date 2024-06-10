@@ -9,7 +9,7 @@ import {
 	ThreeMFLoader,
 } from 'three/examples/jsm/Addons.js';
 import {CSS3DRenderer, CSS3DSprite} from 'three/examples/jsm/Addons.js';
-import {getCurrentInstance, onMounted, ref, render, watch, withDirectives} from 'vue';
+import {getCurrentInstance, onMounted, onUnmounted, ref, watch} from 'vue';
 //import jsonData from '@/json/info.json';
 import {loadGLTF} from '../utils/model';
 import axios from 'axios';
@@ -20,6 +20,7 @@ import {useModelDataStore} from '@/store/modelData';
 import {useSelectModelStore} from '@/store/SelectModel';
 import {useHierarchyDataStore} from '@/store/hierarchyData';
 import {useModelCardStore} from '@/store/modelCardData';
+import {useInfoDataStore} from '@/store/infoData';
 import createInfo from '@/utils/tools';
 import {Reflector} from 'three/addons/objects/Reflector.js';
 import {ReflectorForSSRPass} from 'three/examples/jsm/Addons.js';
@@ -46,6 +47,7 @@ import {Water} from 'three/examples/jsm/objects/Water.js';
 import {Sky} from 'three/examples/jsm/objects/Sky.js';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
+import {TrefoilPolynomialKnot} from 'three/examples/jsm/curves/CurveExtras.js';
 
 let marker: CSS3DSprite, object01: THREE.Group<THREE.Object3DEventMap>;
 let orbit: OrbitControls;
@@ -55,6 +57,7 @@ let modelStore = useModelDataStore();
 let selectModelStore = useSelectModelStore();
 let modelCardStore = useModelCardStore();
 let hierarchyStore = useHierarchyDataStore();
+let infoDataStore = useInfoDataStore();
 let loading = ref(true);
 let infoArr: any;
 let controlMode: 'translate' | 'rotate' | 'scale';
@@ -63,6 +66,14 @@ let scene: THREE.Scene;
 let cannonWorld: CANNON.World;
 let clock: THREE.Clock;
 let cannonDebugger: any;
+let uuidArr: string[] = [];
+let startX: number,
+	startY: number,
+	endX: number,
+	endY: number,
+	totalDistance = 0;
+let groupArr: any[];
+let watchHandle01: any, watchHandle02: any, watchHandle03: any, watchHandle04: any;
 onMounted(async () => {
 	let container;
 	let camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer;
@@ -70,7 +81,7 @@ onMounted(async () => {
 	let controlsMap: MapControls;
 	let enableSelection = false;
 	let enableDrag = false;
-	let group: THREE.Group;
+	let group: THREE.Object3D;
 	const mouse = new THREE.Vector2();
 	const raycaster = new THREE.Raycaster();
 	const raycasterPlane = new THREE.Raycaster();
@@ -105,27 +116,11 @@ onMounted(async () => {
 
 		//加载gltf模型
 		// let infoArr = jsonData.models;
-		for (let i = 0; i < infoArr.length; ++i) {
-			const info = infoArr[i];
-			await deepSearch(info, modelArr, i);
-		}
-		async function deepSearch(root: any, parent: any[], id: number) {
-			await loadGLTF(root, scene, objects);
-			if (root.children) {
-				parent[id] = [];
-				for (let i = 0; i < root.children.length; ++i) {
-					await deepSearch(root.children[i], parent[id], i);
-				}
-				// root.children.forEach((child: any, index: any) => {
-				// 	await deepSearch(child, parent[id], index);
-				// });
-			}
-		}
-
 		init();
-
-		// 当两个异步操作都完成后，加载结束
+		await sceneAddModels();
+		worldAddBody();
 		loading.value = false;
+		// 当两个异步操作都完成后，加载结束
 	} catch (error) {
 		// 处理错误情况
 		console.error(error);
@@ -133,7 +128,7 @@ onMounted(async () => {
 
 	function init() {
 		clock = new THREE.Clock();
-		group = new THREE.Group();
+		group = new THREE.Object3D();
 		scene.add(group);
 		//widh和height用来设置Three.js输出的Canvas画布尺寸(像素px)
 		const width: any = document.getElementById('Canvas')?.offsetWidth;
@@ -153,7 +148,7 @@ onMounted(async () => {
 		//创建物理世界
 		cannonWorld = new CANNON.World();
 		cannonWorld.gravity.set(0, -9.8, 0);
-		worldAddBody();
+
 		//添加地面
 		// const plane = new THREE.Mesh(
 		// 	new THREE.PlaneGeometry(200, 200),
@@ -170,12 +165,6 @@ onMounted(async () => {
 		floorBody.position.set(0, 0, 0);
 		floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
 		cannonWorld.addBody(floorBody);
-		cannonDebugger = CannonDebugger(scene, cannonWorld, {
-			onInit(body: CANNON.Body, mesh: THREE.Mesh) {
-				mesh.visible = true;
-				console.log(body);
-			},
-		});
 
 		const floorGeometry = new THREE.PlaneGeometry(100, 100);
 		const floorGeometry1 = new THREE.PlaneGeometry(100, 100);
@@ -184,119 +173,15 @@ onMounted(async () => {
 			shininess: 30, //高光部分的亮度，默认30
 			specular: 0x5d81a5, //高光部分的颜色
 		});
-		const floorMesh = new THREE.Mesh(floorGeometry1, material01);
-		floorMesh.position.set(0, -0.01, 0);
-		floorMesh.rotation.x = -THREE.MathUtils.degToRad(90);
-		floorMesh.receiveShadow = true;
-		plane = floorMesh;
-		scene.add(floorMesh);
-
-		const groundMirror = new Reflector(floorGeometry, {
-			clipBias: 0.3,
-			textureWidth: 300,
-			textureHeight: 300,
-			color: 0x808080,
-		});
-		groundMirror.position.set(0, 0, 0);
-		groundMirror.rotation.x = -THREE.MathUtils.degToRad(90);
-		groundMirror.receiveShadow = true;
-
-		//scene.add(groundMirror);
-		let selects: any = [];
-		objects.forEach((item) => {
-			item.traverse((obj) => {
-				if (obj instanceof THREE.Mesh) {
-					selects.push(obj);
-				}
-			});
-		});
-		console.log('------s', selects, objects);
-		let ReflectorGeometry = new THREE.PlaneGeometry(100, 100);
-		//const mergedGeometry = BufferGeometryUtils.mergeGeometries(selects);
-		let groundReflector = new ReflectorForSSRPass(ReflectorGeometry, {
-			clipBias: 0.0003,
-			textureWidth: window.innerWidth,
-			textureHeight: window.innerHeight,
-			color: 0x888888,
-			useDepthTexture: true,
-		});
-		groundReflector.material.depthWrite = false;
-		groundReflector.rotation.x = -Math.PI / 2;
-		groundReflector.visible = false;
-		groundReflector.position.set(0, 0, 0);
-		//scene.add(groundReflector);
-
-		let composer = new EffectComposer(renderer);
-
-		let ssrPass = new SSRPass({
-			renderer,
-			scene,
-			camera,
-			width: innerWidth,
-			height: innerHeight,
-			groundReflector: groundReflector,
-			selects: selects,
-		});
-
-		composer.addPass(ssrPass);
-		ssrPass.thickness = 0.018;
-		ssrPass.infiniteThick = false;
-		ssrPass.maxDistance = 0.1;
-		groundReflector.maxDistance = 0.036;
-		ssrPass.opacity = 0.35;
-		groundReflector.opacity = 0.317;
-
-		composer.addPass(new ShaderPass(GammaCorrectionShader));
-
+		plane = new THREE.Mesh(floorGeometry1, material01);
+		plane.position.set(0, 0, 0);
+		plane.rotation.x = -Math.PI / 2;
+		plane.receiveShadow = true;
+		scene.add(plane);
 		//添加网格
 		const gridHelper = new THREE.GridHelper(4000, 1000, 0x0000ff, 0x808080);
 		gridHelper.position.set(0, -1, 0);
 		scene.add(gridHelper);
-
-		//scene.position.set(30, -30, 0);
-		//添加光源
-		// const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
-		// directionalLight.position.set(20, 70, 20);
-		// directionalLight.target.position.set(0, 0, 0);
-		// directionalLight.castShadow = true;
-		// scene.add(directionalLight);
-		// directionalLight.shadow.mapSize.set(4096, 4096);
-		// directionalLight.shadow.camera.near = 0.01; // default
-		// directionalLight.shadow.camera.far = 500; // default
-		// directionalLight.shadow.camera.top = 500;
-		// directionalLight.shadow.camera.bottom = -500;
-		// directionalLight.shadow.camera.left = -500;
-		// directionalLight.shadow.camera.right = 500;
-		// directionalLight.shadow.radius = 10;
-
-		// const light = new THREE.PointLight(0xffffff, 0.1, 50);
-		// light.position.set(10, 10, 10);
-		// light.castShadow = true; // default false
-		// scene.add(light);
-		// light.shadow.mapSize.width = 1024; // default
-		// light.shadow.mapSize.height = 1024; // default
-		// light.shadow.camera.near = 0.5; // default
-		// light.shadow.camera.far = 500; // default
-		// const spotLight = new THREE.SpotLight(0xffffff, 20, 20);
-		// spotLight.position.set(0, 20, 20);
-		// spotLight.target.position.set(0, 0, 0);
-		// //spotLight.map = new THREE.TextureLoader().load(url);
-
-		// spotLight.castShadow = true;
-
-		// spotLight.shadow.mapSize.width = 1024;
-		// spotLight.shadow.mapSize.height = 1024;
-
-		// spotLight.shadow.camera.near = 0.3;
-		// spotLight.shadow.camera.far = 50;
-		// spotLight.shadow.camera.fov = 30;
-
-		// scene.add(spotLight);
-		// const ambient = new THREE.AmbientLight(0xffffff, 10);
-		// scene.add(ambient);
-		//添加一个长方体
-		//添加天空
-
 		//scene.background = new THREE.Color(0xa0a0a0);
 		scene.fog = new THREE.Fog(0x808080, 10, 1000);
 		const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 10);
@@ -315,12 +200,6 @@ onMounted(async () => {
 		dirLight.shadow.camera.far = 100;
 		dirLight.shadow.mapSize.set(2048, 2048);
 		scene.add(dirLight);
-		//添加环境贴图
-		// new RGBELoader().setPath('./equirectangular/').load('sky.hdr', function (texture) {
-		// 	texture.mapping = THREE.EquirectangularReflectionMapping;
-		// 	scene.background = texture;
-		// 	scene.environment = texture;
-		// });
 
 		async function keepJson(json: any) {
 			try {
@@ -352,9 +231,15 @@ onMounted(async () => {
 		control.addEventListener('dragging-changed', function (event) {
 			orbit.enabled = !event.value;
 		});
-		//创建包围盒
-		//box = new THREE.BoxHelper(object, 0xffff00);
-		watch(modelCardStore.data, async (newValue, oldValue) => {
+
+		// 监听鼠标移动事件
+		//renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+		watchHandle01 = watch(infoDataStore.data, (newValue, oldValue) => {
+			sceneRemoveModels();
+			infoArr = newValue.models;
+			sceneAddModels();
+		});
+		watchHandle02 = watch(modelCardStore.data, async (newValue, oldValue) => {
 			console.log('-----------cardstore', modelCardStore.data);
 			let info: fullInfo = createInfo();
 			info.path = newValue.path;
@@ -363,11 +248,11 @@ onMounted(async () => {
 			const cardY = modelCardStore.data.posy;
 			const pos = getWorldPosition(new THREE.Vector2(cardX, cardY));
 			info.modelInfo.posx = pos.x;
-			info.modelInfo.posz = pos.y;
+			info.modelInfo.posy = pos.y;
 			info.modelInfo.posz = pos.z;
-			await loadGLTF(info, scene, objects).then((gltf: any) => {
-				cannonWorld.addBody(gltf.scene.userData.body);
-			});
+			await loadGLTF(info, scene, objects); //.then((gltf: any) => {
+			// 	cannonWorld.addBody(gltf.scene.userData.body);
+			// });
 			info.modelInfo.uuid = selectModelStore.model.uuid;
 			console.log('------------arrrrr', info);
 
@@ -378,23 +263,73 @@ onMounted(async () => {
 				children: [],
 			});
 		});
-		watch(modelStore.modelData, (newValue, oldValue) => {
+		watchHandle03 = watch(modelStore.modelData, (newValue, oldValue) => {
 			updateModel(modelStore.modelData);
 		});
 
-		watch(selectModelStore, (newValue, oldValue) => {
+		watchHandle04 = watch(selectModelStore, (newValue, oldValue) => {
 			const uuid = newValue.model.uuid;
 			if (!uuid) return;
-			objects.forEach((item) => {
+			objects.forEach(async (item) => {
 				if (item.uuid == uuid) {
 					initData(modelStore.modelData, selectModelStore.model.uuid);
 					modelSelect = item;
+					control.detach();
 					control.attach(modelSelect);
 					if (controlMode) control.setMode(controlMode);
 				}
 			});
 		});
-
+		async function findGroup(uuid: string, infoArr: any) {
+			let on = false;
+			for (let i = 0; i < infoArr.length; ++i) {
+				const info = infoArr[i];
+				await deepSearch(info, uuid);
+				on = false;
+			}
+			async function deepSearch(root: any, id: string) {
+				if (on) uuidArr.push(root.modelInfo.uuid);
+				if (root.modelInfo.uuid == id) on = true;
+				if (root.children) {
+					for (let i = 0; i < root.children.length; ++i) {
+						await deepSearch(root.children[i], id);
+					}
+					if (root.modelInfo.uuid == id) on = false;
+				}
+			}
+		}
+		function findObjects(idArr: any[]) {
+			objects.forEach((item) => {
+				if (idArr.indexOf(item.uuid) !== -1) groupArr.push(item);
+			});
+		}
+		async function onMouseDown(event: WindowEventMap['mousedown']) {
+			if (!uuidArr.length && modelSelect) {
+				await findGroup(modelSelect.uuid, infoArr);
+				findObjects(uuidArr);
+			}
+			startX = modelSelect.position.x;
+			startY = modelSelect.position.z;
+			console.log('------mousedown', groupArr);
+		}
+		function onMouseUp(event: WindowEventMap['mouseup']) {
+			uuidArr = [];
+			groupArr = [];
+			startX = startY = 0;
+		}
+		async function onMouseMove(event: WindowEventMap['mousemove']) {
+			if (!modelSelect) return;
+			endX = modelSelect.position.x;
+			endY = modelSelect.position.z;
+			let distanceX = endX - startX;
+			let distanceY = endY - startY;
+			startX = modelSelect.position.x;
+			startY = modelSelect.position.z;
+			groupArr.forEach((item) => {
+				item.position.x += distanceX;
+				item.position.z += distanceY;
+			});
+		}
 		function updateModel(info: modelInfo) {
 			if (modelSelect) {
 				modelSelect.position.set(Number(info.posx), Number(info.posy), Number(info.posz));
@@ -438,7 +373,7 @@ onMounted(async () => {
 			let deltaTime = clock.getDelta();
 			cannonWorld.step(1 / 60, deltaTime);
 			updateModelBody();
-			cannonDebugger.update();
+			if (cannonDebugger) cannonDebugger.update();
 		}
 		animate();
 		// dragControls.addEventListener('drag', render);
@@ -446,29 +381,82 @@ onMounted(async () => {
 		document.addEventListener('click', onClick);
 		// window.addEventListener('keydown', onKeyDown);
 		// window.addEventListener('keyup', onKeyUp);
+		window.addEventListener('mousemove', onMouseMove);
+		window.addEventListener('mousedown', onMouseDown);
+		window.addEventListener('mouseup', onMouseUp);
 		// dragControls.addEventListener('dragstart', onDragStart);
 		// dragControls.addEventListener('dragend', onDragEnd);
 		render();
+	}
+	async function sceneAddModels() {
+		for (let i = 0; i < infoArr.length; ++i) {
+			const info = infoArr[i];
+			await deepSearch(info, modelArr, i);
+		}
+		async function deepSearch(root: any, parent: any[], id: number) {
+			await loadGLTF(root, scene, objects);
+			if (root.children) {
+				parent[id] = [];
+				for (let i = 0; i < root.children.length; ++i) {
+					await deepSearch(root.children[i], parent[id], i);
+				}
+			}
+		}
+	}
+	function sceneRemoveModels() {
+		worldRemoveBody();
+		for (let i = 0; i < objects.length; ++i) {
+			scene.remove(objects[i]);
+			//清理纹理
+			scene.traverse(function (child) {
+				if (child instanceof THREE.Mesh) {
+					child.material.dispose();
+					if (Array.isArray(child.material)) {
+						child.material.forEach((material) => material.dispose());
+					}
+				}
+				if (child instanceof CSS3DSprite) {
+					child.parent?.remove(child);
+				}
+			});
+			//清理材质
+			scene.traverse(function (child) {
+				if (child instanceof THREE.Mesh) {
+					if (child.material.map) child.material.map.dispose();
+					if (child.material.lightMap) child.material.lightMap.dispose();
+					if (child.material.bumpMap) child.material.bumpMap.dispose();
+					if (child.material.normalMap) child.material.normalMap.dispose();
+					if (child.material.specularMap) child.material.specularMap.dispose();
+					if (child.material.envMap) child.material.envMap.dispose();
+					if (child.material.reflectivityMap) child.material.reflectivityMap.dispose();
+					if (child.material.alphaMap) child.material.alphaMap.dispose();
+				}
+			});
+		}
+		//清理渲染器占用资源
+		renderer.clear(true, true, true);
 	}
 	function getWorldPosition(pos: THREE.Vector2): THREE.Vector3 {
 		const box = canvas?.getBoundingClientRect();
 		// 将鼠标位置转换为归一化设备坐标(-1 到 +1)
 		/* eslint-disable */
-		mouse.x = (pos.x / box!.width) * 2 - 1;
-		mouse.y = -(pos.y / box!.height) * 2 + 1;
+		const mouse = new THREE.Vector2();
+		mouse.x = ((pos.x - left) / box!.width) * 2 - 1;
+		mouse.y = -((pos.y - top) / box!.height) * 2 + 1;
 		/* eslint-disable */
+
 		// 使用鼠标位置更新射线投射器
 		raycasterPlane.setFromCamera(mouse, camera);
 
 		// 计算物体和射线的交点
-		var intersects1 = raycasterPlane.intersectObjects(plane);
-		console.log('----------intersections', intersects1, plane, objects[0]);
+		var intersects1 = raycasterPlane.intersectObjects([plane], true);
+		console.log('----------intersections', intersects1, plane, objects[0], mouse, pos);
 		// 如果存在交点
 		if (intersects1.length > 0) {
 			// 获取第一个交点的对象位置
 			var intersectionPoint = intersects1[0].point;
-			return intersectionPoint;
 			console.log('Clicked position:', intersectionPoint);
+			return intersectionPoint;
 		}
 		return new THREE.Vector3(0, 0, 0);
 	}
@@ -486,6 +474,17 @@ onMounted(async () => {
 			const body = objects[i].userData.body;
 			cannonWorld.addBody(body);
 		}
+		cannonDebugger = CannonDebugger(scene, cannonWorld, {
+			onInit(body: CANNON.Body, mesh: THREE.Mesh) {
+				mesh.visible = true;
+			},
+		});
+	}
+	function worldRemoveBody() {
+		for (let i = 0; i < objects.length; ++i) {
+			const body = objects[i].userData.body;
+			cannonWorld.removeBody(body);
+		}
 	}
 	function updateModelBody() {
 		for (let i = 0; i < objects.length; ++i) {
@@ -496,14 +495,14 @@ onMounted(async () => {
 			box.getSize(size);
 			const len = size.y / 2;
 			body.position.set(scene.position.x, scene.position.y + len, scene.position.z);
-			body.quaternion.copy(scene.quaternion);
+			//body.quaternion.copy(scene.quaternion);
 			if (scene.position.x !== body.position.x || scene.position.y !== body.position.y) {
 				scene.position.set(body.position.x, body.position.y - len, body.position.z);
 				scene.quaternion.copy(body.quaternion);
 			}
-			if (scene.quaternion !== body.quaternion) {
-				scene.quaternion.copy(body.quaternion);
-			}
+			// if (scene.quaternion !== body.quaternion) {
+			// 	scene.quaternion.copy(body.quaternion);
+			// }
 		}
 	}
 	function hexToRgb(hex: string) {
@@ -619,6 +618,7 @@ onMounted(async () => {
 		raycaster.setFromCamera(mouse, camera);
 		intersections = raycaster.intersectObjects(objects, true);
 
+		console.log('----------onflick', event.clientX, event.clientY, intersections, plane);
 		if (intersections.length) {
 			modelSelect = findScene(intersections[0].object);
 			console.log('----------modelSelect', modelSelect);
@@ -639,23 +639,6 @@ onMounted(async () => {
 					object.visible = !object.visible;
 				}
 			});
-
-			if (intersections.length > 0) {
-				// const object = intersections[0].object;
-				// console.log('---------------', object);
-				// if (group.children.includes(object) === true) {
-				// 	object.material.emissive.set(0x000000);
-				// 	scene.attach(object);
-				// } else {
-				// 	object.material.emissive.set(0xaaaaaa);
-				// 	group.attach(object);
-				// }
-				// dragControls.transformGroup = true;
-				// draggableObjects.push(group);
-			}
-			if (group.children.length === 0) {
-				//dragControls.transformGroup = false;
-			}
 		}
 		if (enableDrag) {
 			draggableObjects.push(...objects);
@@ -663,7 +646,7 @@ onMounted(async () => {
 		render();
 	}
 
-	function render() {
+	async function render() {
 		if (modelSelect) {
 			clickData(modelStore.modelData);
 		}
@@ -671,6 +654,7 @@ onMounted(async () => {
 		//更新物理世界
 		//updateModelBody();
 		//requestAnimationFrame(render);
+		//组拖拽
 	}
 });
 function writeData(info: any, uuid: string, data: any) {
@@ -687,7 +671,7 @@ function writeData(info: any, uuid: string, data: any) {
 		info.modelInfo.outline = data.outline;
 		info.modelInfo.collision = data.collision;
 		info.modelInfo.color = data.color;
-		console.log('-=-==-=-=-=info', info);
+		//console.log('-=-==-=-=-=info', info);
 	}
 	if (info.children) {
 		info.children.forEach((item: any) => {
@@ -767,6 +751,12 @@ const sizeHandle = () => {
 	control.setMode('scale');
 	controlMode = 'scale';
 };
+onUnmounted(() => {
+	watchHandle01 && watchHandle01();
+	watchHandle02 && watchHandle02();
+	watchHandle03 && watchHandle03();
+	watchHandle04 && watchHandle04();
+});
 </script>
 <template>
 	<div id="Canvas" class="canvas"></div>

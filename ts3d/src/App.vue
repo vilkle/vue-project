@@ -10,6 +10,7 @@ import {useModelDataStore} from './store/modelData';
 import {useSelectModelStore} from './store/SelectModel';
 import {useHierarchyDataStore} from './store/hierarchyData';
 import {useModelCardStore} from './store/modelCardData';
+import {useInfoDataStore} from './store/infoData';
 import type Node from 'element-plus/es/components/tree/src/model/node';
 import type {DragEvents} from 'element-plus/es/components/tree/src/model/useDragNode';
 import type {AllowDropType, NodeDropType} from 'element-plus/es/components/tree/src/tree.type';
@@ -28,6 +29,7 @@ let selectName: any = {name: ''};
 let selectModelStore = useSelectModelStore();
 let hierarchyStore = useHierarchyDataStore();
 let modelCardStore = useModelCardStore();
+let infoDataStore = useInfoDataStore();
 
 function inputHandle(file: any, fileList: any) {
 	loading.value = true;
@@ -41,8 +43,9 @@ function inputHandle(file: any, fileList: any) {
 		reader.readAsText(resBlob, 'utf-8');
 		reader.onload = async (e: any) => {
 			let res = JSON.parse(e.target.result);
-			console.log(JSON.parse(e.target.result));
-			await delay(5000);
+			infoDataStore.data = {models: res};
+			initHierarchyByInfo(infoDataStore.data.models);
+			console.log('------infoDataStore', JSON.parse(e.target.result), infoDataStore.data);
 			loading.value = false;
 		};
 	};
@@ -193,16 +196,8 @@ onMounted(async () => {
 		modelPath.path.forEach((item: any) => {
 			pathArr.value.push(item);
 		});
-		console.log('---------', infoArr);
-		hierarchyStore.data[0].children = [];
-		//加载树节点
-		for (let i = 0; i < infoArr.length; ++i) {
-			const info = infoArr[i];
-
-			deepSearch(info, hierarchyStore.data[0].children, i, '');
-		}
+		initHierarchyByInfo(infoArr);
 		await delay(500);
-
 		// 当两个异步操作都完成后，加载结束
 		loading.value = false;
 	} catch (error) {
@@ -210,9 +205,18 @@ onMounted(async () => {
 		console.error(error);
 	}
 });
+function initHierarchyByInfo(infoArr: any) {
+	hierarchyStore.data[0].children = [];
+	//加载树节点
+	for (let i = 0; i < infoArr.length; ++i) {
+		const info = infoArr[i];
+
+		deepSearch(info, hierarchyStore.data[0].children, i, '');
+	}
+}
 async function fetchData(url: string) {
 	const response = await axios.get(url);
-	console.log('------------', response.data);
+	console.log('------------infoArr', response.data);
 
 	return response.data;
 }
@@ -243,7 +247,7 @@ function projectClick(node: any) {
 				<el-menu-item index="2">页面</el-menu-item>
 				<el-menu-item index="3">场景</el-menu-item>
 				<el-sub-menu index="4">
-					<template #title>工作区</template>
+					<template #title>模型</template>
 					<el-menu-item index="4-1">item one</el-menu-item>
 					<el-menu-item index="4-2">item two</el-menu-item>
 					<el-menu-item index="4-3">item three</el-menu-item>
@@ -666,6 +670,12 @@ tr {
 }
 .el-menu--popup {
 	background-color: rgb(29, 29, 29) !important;
+	border: 0px !important;
+}
+::v-deep .el-sub-menu .el-menu--popup {
+	border-radius: 0 !important;
+	margin: 0 !important;
+	box-shadow: none !important;
 }
 .el-tree-node__content:hover {
 	background-color: #525252 !important;
@@ -710,13 +720,16 @@ h3 {
 	font-size: 12px;
 	border: 0.5px solid;
 	border-color: rgb(73, 73, 73);
-	color: rgb(255, 255, 255);
+	color: rgb(216, 216, 216);
 	background-color: rgb(100, 100, 100);
 }
 .el-tabs__item.is-active {
 	background-color: rgb(100, 100, 100) !important;
 }
-
+.el-tabs--border-card > .el-tabs__header .el-tabs__item.is-active {
+	border-left-color: rgb(77, 77, 77) !important;
+	border-right-color: rgb(77, 77, 77) !important;
+}
 .el-tabs__item {
 	background-color: rgb(77, 77, 77) !important;
 }
@@ -743,7 +756,7 @@ h3 {
 	padding-top: 7px;
 	padding-bottom: 2px;
 	width: inherit;
-	height: 130px;
+	height: 127px;
 	overflow: hidden;
 	border: 1px solid;
 	border-color: rgb(73, 73, 73);
@@ -767,7 +780,7 @@ h3 {
 .navigate {
 	width: inherit;
 	display: flex;
-	color: aliceblue;
+	color: rgb(255, 255, 255);
 	background-color: rgb(97, 97, 97);
 }
 

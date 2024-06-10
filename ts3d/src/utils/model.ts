@@ -7,8 +7,7 @@ import * as THREE from 'three';
 const loader = new GLTFLoader();
 
 export async function loadGLTF(info: any, parent: any, objects: any[]) {
-	console.log(`./models/${info.path}/index.gltf`);
-
+	//console.log(`./models/${info.path}/index.gltf`);
 	return loader.loadAsync(`./models/${info.path}/index.gltf`).then((gltf: any) => {
 		const box = new THREE.Box3().setFromObject(gltf.scene);
 		const size = new THREE.Vector3();
@@ -40,8 +39,6 @@ export async function loadGLTF(info: any, parent: any, objects: any[]) {
 			position: new CANNON.Vec3(modelInfo.posx, modelInfo.posy + len, modelInfo.posz),
 			linearDamping: 0.9,
 		});
-		console.log('---------------size', size.x, size.y, size.z);
-
 		body.quaternion.copy(gltf.scene.quaternion);
 		gltf.scene.userData.body = body;
 		if (modelInfo.uuid == '') {
@@ -50,8 +47,7 @@ export async function loadGLTF(info: any, parent: any, objects: any[]) {
 			selectModelStore.model.name = info.modelInfo.name;
 		}
 		//parent[id] = gltf.scene;
-		console.log(info.path, '---load', size, gltf);
-		return gltf;
+		//console.log(info.path, '---load', size, gltf);
 	});
 }
 function markerDom(info: fullInfo): CSS3DSprite {
