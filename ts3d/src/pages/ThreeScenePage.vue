@@ -7,6 +7,7 @@ import {
 	OrbitControls,
 	RGBELoader,
 	ThreeMFLoader,
+	type GLTF,
 } from 'three/examples/jsm/Addons.js';
 import {CSS3DRenderer, CSS3DSprite} from 'three/examples/jsm/Addons.js';
 import {getCurrentInstance, onMounted, onUnmounted, ref, watch} from 'vue';
@@ -72,8 +73,9 @@ let startX: number,
 	endX: number,
 	endY: number,
 	totalDistance = 0;
-let groupArr: any[];
+let groupArr: any[] = [];
 let watchHandle01: any, watchHandle02: any, watchHandle03: any, watchHandle04: any;
+
 onMounted(async () => {
 	let container;
 	let camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer;
@@ -235,12 +237,16 @@ onMounted(async () => {
 		// 监听鼠标移动事件
 		//renderer.domElement.addEventListener('mousemove', onMouseMove, false);
 		watchHandle01 = watch(infoDataStore.data, (newValue, oldValue) => {
-			sceneRemoveModels();
-			infoArr = newValue.models;
-			sceneAddModels();
+			const reload = newValue.reload;
+			console.log('---------', newValue.reload, newValue.models);
+			if (reload) {
+				sceneRemoveModels();
+				infoArr = newValue.models;
+				console.log('------input', infoArr);
+				sceneAddModels();
+			}
 		});
 		watchHandle02 = watch(modelCardStore.data, async (newValue, oldValue) => {
-			console.log('-----------cardstore', modelCardStore.data);
 			let info: fullInfo = createInfo();
 			info.path = newValue.path;
 			info.modelInfo.name = newValue.name;
@@ -250,13 +256,14 @@ onMounted(async () => {
 			info.modelInfo.posx = pos.x;
 			info.modelInfo.posy = pos.y;
 			info.modelInfo.posz = pos.z;
-			await loadGLTF(info, scene, objects); //.then((gltf: any) => {
+			const gltf: GLTF = await loadGLTF(info, scene, objects); //.then((gltf: any) => {
 			// 	cannonWorld.addBody(gltf.scene.userData.body);
 			// });
-			info.modelInfo.uuid = selectModelStore.model.uuid;
-			console.log('------------arrrrr', info);
-
+			console.log('--------cardGLTF', gltf);
+			info.modelInfo.uuid = gltf.scene.uuid;
 			infoArr.push(info);
+			infoDataStore.data = {models: infoArr, reload: false};
+			console.log('------------addCardInfoArr', infoArr);
 			hierarchyStore.data[0].children.push({
 				label: newValue.name,
 				id: info.modelInfo.uuid,
@@ -275,6 +282,7 @@ onMounted(async () => {
 					initData(modelStore.modelData, selectModelStore.model.uuid);
 					modelSelect = item;
 					control.detach();
+					console.log('-------selectModel', modelSelect);
 					control.attach(modelSelect);
 					if (controlMode) control.setMode(controlMode);
 				}
@@ -304,13 +312,13 @@ onMounted(async () => {
 			});
 		}
 		async function onMouseDown(event: WindowEventMap['mousedown']) {
-			if (!uuidArr.length && modelSelect) {
+			if (!modelSelect) return;
+			if (!uuidArr.length) {
 				await findGroup(modelSelect.uuid, infoArr);
 				findObjects(uuidArr);
 			}
 			startX = modelSelect.position.x;
 			startY = modelSelect.position.z;
-			console.log('------mousedown', groupArr);
 		}
 		function onMouseUp(event: WindowEventMap['mouseup']) {
 			uuidArr = [];
@@ -318,7 +326,7 @@ onMounted(async () => {
 			startX = startY = 0;
 		}
 		async function onMouseMove(event: WindowEventMap['mousemove']) {
-			if (!modelSelect) return;
+			if (!modelSelect || !groupArr.length) return;
 			endX = modelSelect.position.x;
 			endY = modelSelect.position.z;
 			let distanceX = endX - startX;
@@ -348,7 +356,6 @@ onMounted(async () => {
 					scene.remove(box);
 				}
 				if (info.color) {
-					console.log('------color', modelSelect);
 					setColor(modelSelect, info.color);
 				}
 				//render();
@@ -433,6 +440,7 @@ onMounted(async () => {
 				}
 			});
 		}
+		objects = [];
 		//清理渲染器占用资源
 		renderer.clear(true, true, true);
 	}
@@ -450,18 +458,15 @@ onMounted(async () => {
 
 		// 计算物体和射线的交点
 		var intersects1 = raycasterPlane.intersectObjects([plane], true);
-		console.log('----------intersections', intersects1, plane, objects[0], mouse, pos);
 		// 如果存在交点
 		if (intersects1.length > 0) {
 			// 获取第一个交点的对象位置
 			var intersectionPoint = intersects1[0].point;
-			console.log('Clicked position:', intersectionPoint);
 			return intersectionPoint;
 		}
 		return new THREE.Vector3(0, 0, 0);
 	}
 	function setColor(root: any, color: string) {
-		console.log('-------', root.name, root);
 		if (root.type == 'Mesh') root.material.color.setHex(color);
 		if (root.children) {
 			root.children.forEach((item: any) => {
@@ -520,7 +525,7 @@ onMounted(async () => {
 		let param = {modelInfo: {uuid: '123'}, children: infoArr};
 		let data = {data: Object()};
 		readData(param, uuid, data);
-		console.log('-------data', data.data.name);
+		//console.log('-------data', data.data.name);
 		info.color = data.data.color;
 		info.outline = data.data.outline;
 		info.collision = data.data.collision;
@@ -614,14 +619,11 @@ onMounted(async () => {
 		) {
 			return;
 		}
-
 		raycaster.setFromCamera(mouse, camera);
 		intersections = raycaster.intersectObjects(objects, true);
-
-		console.log('----------onflick', event.clientX, event.clientY, intersections, plane);
 		if (intersections.length) {
 			modelSelect = findScene(intersections[0].object);
-			console.log('----------modelSelect', modelSelect);
+			console.log('---------onclick', intersections, modelSelect);
 			selectModelStore.model.uuid = modelSelect.uuid;
 			initData(modelStore.modelData, modelSelect.uuid);
 			clickData(modelStore.modelData);
@@ -680,6 +682,8 @@ function writeData(info: any, uuid: string, data: any) {
 	} else {
 		return -1;
 	}
+	infoDataStore.data.reload = false;
+	infoDataStore.data.models = infoArr;
 }
 function readData(info: any, uuid: string, data: any) {
 	if (info.modelInfo.uuid == uuid) {

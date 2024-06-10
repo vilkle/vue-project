@@ -8,7 +8,7 @@ const loader = new GLTFLoader();
 
 export async function loadGLTF(info: any, parent: any, objects: any[]) {
 	//console.log(`./models/${info.path}/index.gltf`);
-	return loader.loadAsync(`./models/${info.path}/index.gltf`).then((gltf: any) => {
+	return loader.loadAsync(`./models/${info.path}/index.gltf`).then((gltf: any): Promise<GLTF> => {
 		const box = new THREE.Box3().setFromObject(gltf.scene);
 		const size = new THREE.Vector3();
 		box.getSize(size);
@@ -48,6 +48,9 @@ export async function loadGLTF(info: any, parent: any, objects: any[]) {
 		}
 		//parent[id] = gltf.scene;
 		//console.log(info.path, '---load', size, gltf);
+		return new Promise((resolve, reject) => {
+			resolve(gltf);
+		});
 	});
 }
 function markerDom(info: fullInfo): CSS3DSprite {

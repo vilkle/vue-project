@@ -24,7 +24,7 @@ import {vec2} from 'three/examples/jsm/nodes/Nodes.js';
 import {saveAs} from 'file-saver';
 
 let loading = ref(true);
-let infoArr: any[] = [];
+let infoArr: any = [];
 let selectName: any = {name: ''};
 let selectModelStore = useSelectModelStore();
 let hierarchyStore = useHierarchyDataStore();
@@ -43,7 +43,8 @@ function inputHandle(file: any, fileList: any) {
 		reader.readAsText(resBlob, 'utf-8');
 		reader.onload = async (e: any) => {
 			let res = JSON.parse(e.target.result);
-			infoDataStore.data = {models: res};
+			if (!infoDataStore.data.reload) infoDataStore.data.reload = true;
+			infoDataStore.data.models = res;
 			initHierarchyByInfo(infoDataStore.data.models);
 			console.log('------infoDataStore', JSON.parse(e.target.result), infoDataStore.data);
 			loading.value = false;
@@ -81,7 +82,7 @@ const handleClick01 = (node: Node) => {
 	console.log('handleClick', node, node.getChildren, node.id, selectName);
 };
 function getNameById(id: string, select: any) {
-	infoArr.forEach((item) => {
+	infoArr.forEach((item: any) => {
 		deepSearchName(item, id, select);
 	});
 }
@@ -105,16 +106,83 @@ const handleDragEnter = (draggingNode: Node, dropNode: Node, ev: DragEvents) => 
 const handleDragLeave = (draggingNode: Node, dropNode: Node, ev: DragEvents) => {
 	console.log('tree drag leave:', dropNode.label);
 };
+async function AdjustingInfoStructure(sourceId: string, targetId: string) {
+	let hierarchyArr = hierarchyStore.data[0].children;
+	let sourceInfo: any = {};
+	let index: number = 0;
+	let parentId: string = '';
+	let pid: string = '';
+	let rindex: number = 0;
+	//搜索注入信息
+	await deepSearch(sourceId, infoArr);
+	//搜索信息注入位置
+	await searchIndex(sourceId, hierarchyArr);
+	//注入信息
+	await deepInsert(targetId, infoArr);
+	//删除旧信息
+	await deepRemove(parentId, infoArr);
+	console.log('---------adjusting', parentId, rindex);
+
+	async function searchIndex(id: string, arr: any[]) {
+		for (let i = 0; i < arr.length; ++i) {
+			const info = arr[i];
+			if (info.id == id) {
+				index = i;
+			}
+			if (info.children.length) await searchIndex(id, info.children);
+		}
+	}
+	async function deepSearch(id: string, arr: any[]) {
+		for (let i = 0; i < arr.length; ++i) {
+			const info = arr[i];
+			if (info.modelInfo.uuid == id) {
+				sourceInfo = info;
+				parentId = pid;
+				rindex = i;
+				break;
+			}
+			pid = info.modelInfo.uuid;
+			if (info.children.length) await deepSearch(id, info.children);
+		}
+		pid = '';
+	}
+	async function deepInsert(id: string, arr: any[]) {
+		for (let i = 0; i < arr.length; ++i) {
+			const info = arr[i];
+			if (info.modelInfo.uuid == id) {
+				arr[i].children[index] = sourceInfo;
+			}
+			if (info.children.length) await deepInsert(id, info.children);
+		}
+	}
+	async function deepRemove(id: string, arr: any[]) {
+		if (id == '') {
+			arr.splice(rindex, 1);
+		}
+		for (let i = 0; i < arr.length; ++i) {
+			const info = arr[i];
+			if (info.modelInfo.uuid == id) {
+				arr[i].children.splice(rindex, 1);
+			}
+			if (info.children.length) await deepRemove(id, info.children);
+		}
+	}
+}
 const handleDragOver = (draggingNode: Node, dropNode: Node, ev: DragEvents) => {
 	console.log('tree drag over:', dropNode.label);
 };
-const handleDragEnd = (
+const handleDragEnd = async (
 	draggingNode: Node,
 	dropNode: Node,
 	dropType: NodeDropType,
 	ev: DragEvents,
 ) => {
-	console.log('tree drag end:', dropNode && dropNode.label, dropType);
+	console.log('tree drag end:', dropNode.data.id, draggingNode.data.id, dropType);
+	infoArr = infoDataStore.data.models;
+	await AdjustingInfoStructure(draggingNode.data.id, dropNode.data.id);
+	infoDataStore.data.reload = false;
+	infoDataStore.data.models = infoArr;
+	console.log('---------infoarr', infoArr, hierarchyStore.data);
 };
 const handleDrop = (draggingNode: Node, dropNode: Node, dropType: NodeDropType, ev: DragEvents) => {
 	console.log('tree drop:', dropNode.label, dropType);
@@ -192,7 +260,7 @@ onMounted(async () => {
 
 		const result02 = await fetchData('./json/info.json');
 		infoArr = result02.models;
-
+		infoDataStore.data = {models: infoArr, reload: true};
 		modelPath.path.forEach((item: any) => {
 			pathArr.value.push(item);
 		});
